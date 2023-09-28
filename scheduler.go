@@ -51,7 +51,7 @@ func (schd *Scheduler) Add(tasks ...*Task) error {
 			t.AfterFunc = func() {}
 		}
 
-		t.finish = make(chan struct{})
+		t.done = make(chan struct{})
 
 		// Ensure MaxRetry is less 1
 		if t.MaxRetry < 1 {
@@ -94,7 +94,7 @@ func (schd *Scheduler) execTask(t *Task) {
 	} else {
 		t.AfterFunc()
 		// if success return
-		t.finish <- struct{}{}
+		t.done <- struct{}{}
 		return
 	}
 
@@ -103,7 +103,7 @@ func (schd *Scheduler) execTask(t *Task) {
 		if t.ErrFunc != nil && err != nil {
 			t.ErrFunc(err)
 		}
-		t.finish <- struct{}{}
+		t.done <- struct{}{}
 		return
 	}
 
@@ -114,6 +114,6 @@ func (schd *Scheduler) execTask(t *Task) {
 func (schd *Scheduler) StartTask() {
 	for _, v := range schd.tasks {
 		schd.scheduleTask(v)
-		<-v.finish
+		<-v.done
 	}
 }

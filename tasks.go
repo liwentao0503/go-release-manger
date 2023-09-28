@@ -47,6 +47,6 @@ type Task struct {
 	// timer is the internal task timer. This is stored here to provide control via main scheduler functions.
 	timer *time.Timer
 
-	// finish is the internal finish signal. Keep in queue order
-	finish chan struct{}
+	// done is the internal finish signal. Keep in queue order
+	done chan struct{}
 }
