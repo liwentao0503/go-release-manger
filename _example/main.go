@@ -17,12 +17,13 @@ func main() {
 	mainCtx, mainCancel := context.WithCancel(context.Background())
 	scheduler := releaseManage.New()
 
-	tasks := &releaseManage.Task{
-		Ctx:      mainCtx,
+	retryStep := releaseManage.RetryStep{
 		Interval: 1 * time.Second,
-		RunOnce:  false,
-		// DelayTime: 1 * time.Second,
-		MaxRetry: 2,
+		MaxRetry: 3,
+	}
+	tasks := &releaseManage.Task{
+		Ctx:       mainCtx,
+		RetryStep: retryStep,
 		TaskFunc: func() error {
 			fmt.Println("task1")
 			return nil
@@ -37,10 +38,8 @@ func main() {
 
 	tasks2 := &releaseManage.Task{
 		Ctx:       mainCtx,
-		Interval:  1 * time.Second,
-		RunOnce:   false,
+		RetryStep: retryStep,
 		DelayTime: 1 * time.Second,
-		MaxRetry:  3,
 		TaskFunc: func() error {
 			fmt.Println("task2")
 			return fmt.Errorf("task2 err")
@@ -55,9 +54,7 @@ func main() {
 
 	scheduler.Add(tasks, tasks2)
 
-	scheduler.StartTask()
-
-	fmt.Println("task end")
+	go scheduler.StartTask(0)
 
 	quit := make(chan os.Signal, 1)
 

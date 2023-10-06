@@ -5,10 +5,8 @@ import (
 	"time"
 )
 
-// Task contains the scheduled task details and control mechanisms. This struct is used during the creation of tasks.
-// It allows users to control how and when tasks are executed.
-type Task struct {
-	// Interval is the frequency that the task executes. Defining this at 30 seconds, will result in a task that
+type RetryStep struct {
+	// Interval is the frequency that the step executes. Defining this at 30 seconds, will result in a step that
 	// runs every 30 seconds.
 	//
 	// The below are common examples to get started with.
@@ -19,11 +17,12 @@ type Task struct {
 
 	// MaxRetry is max retry times
 	MaxRetry int
+}
 
-	// RunOnce is used to set this task as a single execution task. By default, tasks will continue executing at
-	// the interval specified until deleted. With RunOnce enabled the first execution of the task will result in
-	// the task self deleting.
-	RunOnce bool
+// Task contains the scheduled task details and control mechanisms. This struct is used during the creation of tasks.
+// It allows users to control how and when tasks are executed.
+type Task struct {
+	RetryStep
 
 	// DelayTime is used to specify a delay time for the scheduler. When set, tasks will wait for the specified
 	// time to start the schedule timer. When not set, the previous task and the next task are executed concurrently.

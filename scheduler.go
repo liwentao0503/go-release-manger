@@ -98,7 +98,7 @@ func (schd *Scheduler) execTask(t *Task) {
 		return
 	}
 
-	if t.MaxRetry == 0 || t.RunOnce {
+	if t.MaxRetry == 0 {
 		t.timer.Stop()
 		if t.ErrFunc != nil && err != nil {
 			t.ErrFunc(err)
@@ -111,9 +111,9 @@ func (schd *Scheduler) execTask(t *Task) {
 }
 
 // StartTask start tasks in queue order
-func (schd *Scheduler) StartTask() {
-	for _, v := range schd.tasks {
-		schd.scheduleTask(v)
-		<-v.done
+func (schd *Scheduler) StartTask(start int) {
+	for ; start < len(schd.tasks); start++ {
+		schd.scheduleTask(schd.tasks[start])
+		<-schd.tasks[start].done
 	}
 }
