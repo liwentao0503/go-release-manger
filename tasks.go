@@ -40,6 +40,9 @@ type Task struct {
 	ErrFunc func(error)
 	// ErrFunc is executed with an error. AfterFunc is executed without an error.
 
+	// If it fails within the number of attempts of MaxRetry, whether to exit the entire Scheduler
+	GlobalAbnormalEnd bool
+
 	// ctx is the internal context used to control task cancelation.
 	Ctx context.Context
 

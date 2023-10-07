@@ -37,9 +37,10 @@ func main() {
 	}
 
 	tasks2 := &releaseManage.Task{
-		Ctx:       mainCtx,
-		RetryStep: retryStep,
-		DelayTime: 1 * time.Second,
+		Ctx:               mainCtx,
+		RetryStep:         retryStep,
+		DelayTime:         1 * time.Second,
+		GlobalAbnormalEnd: true,
 		TaskFunc: func() error {
 			fmt.Println("task2")
 			return fmt.Errorf("task2 err")
@@ -52,7 +53,27 @@ func main() {
 		},
 	}
 
-	scheduler.Add(tasks, tasks2)
+	tasks3 := &releaseManage.Task{
+		Ctx:       mainCtx,
+		RetryStep: retryStep,
+		DelayTime: 1 * time.Second,
+		TaskFunc: func() error {
+			fmt.Println("task3")
+			return nil
+		},
+	}
+
+	tasks4 := &releaseManage.Task{
+		Ctx:       mainCtx,
+		RetryStep: retryStep,
+		DelayTime: 1 * time.Second,
+		TaskFunc: func() error {
+			fmt.Println("task4")
+			return nil
+		},
+	}
+
+	scheduler.Add(tasks, tasks2, tasks3, tasks4)
 
 	go scheduler.StartTask(0)
 

@@ -7,6 +7,7 @@ import (
 
 // Scheduler stores the internal task list and provides an interface for task management.
 type Scheduler struct {
+	abnormalEnd chan struct{}
 	// tasks is the internal task list used to store tasks that are currently scheduled.
 	tasks []*Task
 }
@@ -107,6 +108,9 @@ func (schd *Scheduler) execTask(t *Task) {
 		if err != nil {
 			t.ErrFunc(err)
 		}
+		if t.GlobalAbnormalEnd {
+			schd.abnormalEnd <- struct{}{}
+		}
 		t.done <- struct{}{}
 		return
 	}
@@ -118,6 +122,10 @@ func (schd *Scheduler) execTask(t *Task) {
 func (schd *Scheduler) StartTask(start int) {
 	for i := start; i < len(schd.tasks); i++ {
 		schd.scheduleTask(schd.tasks[i])
-		<-schd.tasks[i].done
+		select {
+		case <-schd.abnormalEnd:
+			return
+		case <-schd.tasks[i].done:
+		}
 	}
 }
