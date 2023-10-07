@@ -51,6 +51,10 @@ func (schd *Scheduler) Add(tasks ...*Task) error {
 			t.AfterFunc = func() {}
 		}
 
+		if t.ErrFunc == nil {
+			t.ErrFunc = func(error) {}
+		}
+
 		t.done = make(chan struct{})
 
 		// Ensure MaxRetry is less 1
@@ -100,7 +104,7 @@ func (schd *Scheduler) execTask(t *Task) {
 
 	if t.MaxRetry == 0 {
 		t.timer.Stop()
-		if t.ErrFunc != nil && err != nil {
+		if err != nil {
 			t.ErrFunc(err)
 		}
 		t.done <- struct{}{}
@@ -112,8 +116,8 @@ func (schd *Scheduler) execTask(t *Task) {
 
 // StartTask start tasks in queue order
 func (schd *Scheduler) StartTask(start int) {
-	for ; start < len(schd.tasks); start++ {
-		schd.scheduleTask(schd.tasks[start])
-		<-schd.tasks[start].done
+	for i := start; i < len(schd.tasks); i++ {
+		schd.scheduleTask(schd.tasks[i])
+		<-schd.tasks[i].done
 	}
 }
