@@ -13,10 +13,10 @@ and flexible control over when tasks are executed.
 
 ## Key Features
 
-- **Concurrent Execution**: Tasks are executed in their own goroutines, ensuring accurate scheduling even when individual tasks take longer to complete.
+- **Sequential Execution**: For example, the publishing system needs to publish strictly in the order of dependencies.
 - **Optimized Goroutine Scheduling**: Tasks leverages Go's `time.AfterFunc()` function to reduce sleeping goroutines and optimize CPU scheduling.
 - **Flexible Task Intervals**: Tasks uses the `time.Duration` type to specify intervals, offering a simple interface and flexible control over task execution timing.
 - **Delayed Task Start**: Schedule tasks to start at a later time by specifying a delay time, allowing for greater control over task execution.
-- **One-Time Tasks**: Schedule tasks to run only once by setting the `RunOnce` flag, ideal for single-use tasks or one-time actions.
+- **Max Retry Tasks**: Schedule the task up to xx times by setting the `MaxRetry` flag, which is ideal for one-time tasks or task execution failure timeout retries.
 - **Custom Error Handling**: Define a custom error handling function to handle errors returned by tasks, enabling tailored error handling logic.
 
