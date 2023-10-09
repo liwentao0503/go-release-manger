@@ -9,62 +9,45 @@ import (
 type Scheduler struct {
 	abnormalEnd chan struct{}
 	// tasks is the internal task list used to store tasks that are currently scheduled.
-	tasks []*Task
+	steps []*Step
 }
 
 // New will create a new scheduler instance that allows users to create and manage tasks.
 func New() *Scheduler {
 	s := &Scheduler{}
-	s.tasks = make([]*Task, 0)
+	s.steps = make([]*Step, 0)
 	return s
 }
 
-// Add will add a task to the task list and schedule it. Once added, tasks will wait the defined time interval and then
-// execute. This means a task with a 15 second interval will be triggered 15 seconds after Add is complete. Not before
-// or after (excluding typical machine time jitter).
-//
-//	// Add a task
-//	id, err := scheduler.Add(&tasks.Task{
-//		Interval: time.Duration(30 * time.Second),
-//		TaskFunc: func() error {
-//			// Put your logic here
-//		}(),
-//		ErrFunc: func(err error) {
-//			// Put custom error handling here
-//		}(),
-//	})
-//	if err != nil {
-//		// Do stuff
-//	}
-func (schd *Scheduler) Add(tasks ...*Task) error {
-	for _, t := range tasks {
+func (schd *Scheduler) Add(steps ...*Step) error {
+	for _, s := range steps {
 		// Check if TaskFunc is nil before doing anything
-		if t.TaskFunc == nil {
+		if s.TaskFunc == nil {
 			return fmt.Errorf("task function cannot be nil")
 		}
 
 		// Ensure Interval is never 0, this would cause Timer to panic
-		if t.Interval <= time.Duration(0) {
+		if s.Interval <= time.Duration(0) {
 			return fmt.Errorf("task interval must be defined")
 		}
 
-		if t.AfterFunc == nil {
-			t.AfterFunc = func() {}
+		if s.AfterFunc == nil {
+			s.AfterFunc = func() {}
 		}
 
-		if t.ErrFunc == nil {
-			t.ErrFunc = func(error) {}
+		if s.ErrFunc == nil {
+			s.ErrFunc = func(error) {}
 		}
 
-		t.done = make(chan struct{})
+		s.done = make(chan struct{})
 
 		// Ensure MaxRetry is less 1
-		if t.MaxRetry < 1 {
-			t.MaxRetry = 1
+		if s.MaxRetry < 1 {
+			s.MaxRetry = 1
 		}
 
 		// Add task to schedule
-		schd.tasks = append(schd.tasks, t)
+		schd.steps = append(schd.steps, s)
 	}
 
 	return nil
@@ -72,57 +55,72 @@ func (schd *Scheduler) Add(tasks ...*Task) error {
 
 // The returned task should be treated as read-only, and not modified outside of this package. Doing so, may cause
 // panics.
-func (schd *Scheduler) Tasks() []*Task {
-	return schd.tasks
+func (schd *Scheduler) GetStepsExecutionStatus() []StepStatus {
+	stepStatus := make([]StepStatus, 0, len(schd.steps))
+	for _, v := range schd.steps {
+		stepStatus = append(stepStatus, v.StepStatus)
+	}
+	return stepStatus
 }
 
 // scheduleTask creates the underlying scheduled task. If StartAfter is set, this routine will wait until the
 // time specified.
-func (schd *Scheduler) scheduleTask(t *Task) {
-	time.Sleep(t.DelayTime)
-	t.timer = time.AfterFunc(t.Interval, func() {
+func (schd *Scheduler) scheduleTask(s *Step) {
+	time.Sleep(s.DelayTime)
+	s.StartTime = time.Now()
+	s.timer = time.AfterFunc(s.Interval, func() {
 		select {
-		case <-t.Ctx.Done():
+		case <-s.Ctx.Done():
+			fmt.Println("main ctx has canceled")
 			return
 		default:
 		}
-		schd.execTask(t)
+		schd.execTask(s)
 	})
 }
 
 // execTask is the underlying scheduler, it is used to trigger and execute tasks.
-func (schd *Scheduler) execTask(t *Task) {
+func (schd *Scheduler) execTask(s *Step) {
 	var err error
-	if err = t.TaskFunc(); err == nil {
-		t.AfterFunc()
+	if err = s.TaskFunc(); err == nil {
+		s.EndTime = time.Now()
+		s.DurationTime = time.Since(s.StartTime)
+		s.AfterFunc()
 		// if success return
-		t.done <- struct{}{}
+		s.done <- struct{}{}
+		s.Status = StepExecutionSuccess
 		return
 	}
 
-	t.MaxRetry--
-	if t.MaxRetry == 0 {
-		t.timer.Stop()
-		t.ErrFunc(err)
-		if t.GlobalAbnormalEnd {
+	s.MaxRetry--
+	if s.MaxRetry == 0 {
+		s.EndTime = time.Now()
+		s.DurationTime = time.Since(s.StartTime)
+		s.timer.Stop()
+		s.ErrFunc(err)
+		if s.GlobalAbnormalEnd {
+			s.Status = StepExecutionGlobalFailed
+			s.Result = s.Status.GetResult(err)
 			schd.abnormalEnd <- struct{}{}
 		} else {
-			t.done <- struct{}{}
+			s.Status = StepExecutionSingleFailed
+			s.Result = s.Status.GetResult(err)
+			s.done <- struct{}{}
 		}
 		return
 	}
 
-	t.timer.Reset(t.Interval)
+	s.timer.Reset(s.Interval)
 }
 
-// StartTask start tasks in queue order
-func (schd *Scheduler) StartTask(start int) {
-	for i := start; i < len(schd.tasks); i++ {
-		schd.scheduleTask(schd.tasks[i])
+// StartStep start tasks in queue order
+func (schd *Scheduler) StartStep(start int) {
+	for i := start; i < len(schd.steps); i++ {
+		schd.scheduleTask(schd.steps[i])
 		select {
 		case <-schd.abnormalEnd:
 			return
-		case <-schd.tasks[i].done:
+		case <-schd.steps[i].done:
 		}
 	}
 }

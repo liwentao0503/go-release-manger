@@ -2,10 +2,11 @@ package releaseManage
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
-type RetryStep struct {
+type StepRetry struct {
 	// Interval is the frequency that the step executes. Defining this at 30 seconds, will result in a step that
 	// runs every 30 seconds.
 	//
@@ -19,34 +20,65 @@ type RetryStep struct {
 	MaxRetry int
 }
 
-// Task contains the scheduled task details and control mechanisms. This struct is used during the creation of tasks.
-// It allows users to control how and when tasks are executed.
-type Task struct {
-	RetryStep
+type StepExecutionStatus uint8
 
-	// DelayTime is used to specify a delay time for the scheduler. When set, tasks will wait for the specified
-	// time to start the schedule timer. When not set, the previous task and the next task are executed concurrently.
+const (
+	StepExecutionSuccess StepExecutionStatus = iota + 1
+	StepExecutionSingleFailed
+	StepExecutionGlobalFailed
+)
+
+func (s StepExecutionStatus) GetResult(err error) string {
+	switch s {
+	case StepExecutionSuccess:
+		return ""
+	case StepExecutionSingleFailed:
+		return fmt.Sprintf("single step failed err: %v", err)
+	case StepExecutionGlobalFailed:
+		return fmt.Sprintf("Single-step failure leads to global failure err: %v", err)
+	}
+	return ""
+}
+
+type StepStatus struct {
+	Status       StepExecutionStatus
+	StartTime    time.Time
+	EndTime      time.Time
+	DurationTime time.Duration
+	Result       string
+}
+
+// Step contains the scheduled step details and control mechanisms. This struct is used during the creation of steps.
+// It allows users to control how and when steps are executed.
+type Step struct {
+	// Current running status
+	StepStatus
+
+	StepRetry
+
+	// DelayTime is used to specify a delay time for the scheduler. When set, steps will wait for the specified
+	// time to start the schedule timer. When not set, the previous step and the next step are executed concurrently.
 	DelayTime time.Duration
 
-	// TaskFunc is the user defined function to execute as part of this task.
-	// Either TaskFunc or FuncWithTaskContext must be defined. If both are defined, FuncWithTaskContext will be used.
+	// stepFunc is the user defined function to execute as part of this step.
+	// Either stepFunc or FuncWithstepContext must be defined. If both are defined, FuncWithstepContext will be used.
 	TaskFunc func() error
 
 	// AfterFunc is executed after TaskFunc is executed correctly. Execute only once
 	AfterFunc func()
 
-	// ErrFunc allows users to define a function that is called when tasks return an error. If ErrFunc is nil,
-	// errors from tasks will be ignored.
+	// ErrFunc allows users to define a function that is called when steps return an error. If ErrFunc is nil,
+	// errors from steps will be ignored.
 	ErrFunc func(error)
 	// ErrFunc is executed with an error. AfterFunc is executed without an error.
 
 	// If it fails within the number of attempts of MaxRetry, whether to exit the entire Scheduler
 	GlobalAbnormalEnd bool
 
-	// ctx is the internal context used to control task cancelation.
+	// ctx is the internal context used to control step cancelation.
 	Ctx context.Context
 
-	// timer is the internal task timer. This is stored here to provide control via main scheduler functions.
+	// timer is the internal step timer. This is stored here to provide control via main scheduler functions.
 	timer *time.Timer
 
 	// done is the internal finish signal. Keep in queue order

@@ -12,18 +12,17 @@ import (
 )
 
 func main() {
-
 	// Create Context used to cancel downstream Goroutines
 	mainCtx, mainCancel := context.WithCancel(context.Background())
 	scheduler := releaseManage.New()
 
-	retryStep := releaseManage.RetryStep{
+	retryStep := releaseManage.StepRetry{
 		Interval: 1 * time.Second,
 		MaxRetry: 3,
 	}
-	tasks := &releaseManage.Task{
+	tasks := &releaseManage.Step{
 		Ctx:       mainCtx,
-		RetryStep: retryStep,
+		StepRetry: retryStep,
 		TaskFunc: func() error {
 			fmt.Println("task1")
 			return nil
@@ -36,9 +35,9 @@ func main() {
 		},
 	}
 
-	tasks2 := &releaseManage.Task{
+	tasks2 := &releaseManage.Step{
 		Ctx:               mainCtx,
-		RetryStep:         retryStep,
+		StepRetry:         retryStep,
 		DelayTime:         1 * time.Second,
 		GlobalAbnormalEnd: true,
 		TaskFunc: func() error {
@@ -53,9 +52,9 @@ func main() {
 		},
 	}
 
-	tasks3 := &releaseManage.Task{
+	tasks3 := &releaseManage.Step{
 		Ctx:       mainCtx,
-		RetryStep: retryStep,
+		StepRetry: retryStep,
 		DelayTime: 1 * time.Second,
 		TaskFunc: func() error {
 			fmt.Println("task3")
@@ -63,9 +62,9 @@ func main() {
 		},
 	}
 
-	tasks4 := &releaseManage.Task{
+	tasks4 := &releaseManage.Step{
 		Ctx:       mainCtx,
-		RetryStep: retryStep,
+		StepRetry: retryStep,
 		DelayTime: 1 * time.Second,
 		TaskFunc: func() error {
 			fmt.Println("task4")
@@ -75,7 +74,7 @@ func main() {
 
 	scheduler.Add(tasks, tasks2, tasks3, tasks4)
 
-	go scheduler.StartTask(0)
+	go scheduler.StartStep(0)
 
 	quit := make(chan os.Signal, 1)
 
@@ -86,4 +85,7 @@ func main() {
 	<-quit
 
 	mainCancel()
+
+	fmt.Println(scheduler.GetStepsExecutionStatus())
+	time.Sleep(1 * time.Second)
 }

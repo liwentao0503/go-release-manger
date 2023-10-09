@@ -3,10 +3,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/liwentao0503/go-release-manger)](https://goreportcard.com/report/github.com/liwentao0503/go-release-manger) 
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/liwentao0503/go-release-manger)](https://pkg.go.dev/github.com/liwentao0503/go-release-manger)
 
-Package tasks is an easy to use in-process scheduler for recurring tasks in Go. Similar to a publishing system that publishes in order, 
+Package releaseManage is an easy to use in-process scheduler for recurring steps in Go. Similar to a publishing system that publishes in order, 
 it supports single-step retry, single-step delay, single-step completion hook, single-step error handling, and context graceful exit.
-
-Tasks focus on the sequence of task execution
 
 For simplicity this task scheduler uses the time.Duration type to specify intervals. This allows for a simple interface 
 and flexible control over when tasks are executed.
