@@ -93,25 +93,22 @@ func (schd *Scheduler) scheduleTask(t *Task) {
 // execTask is the underlying scheduler, it is used to trigger and execute tasks.
 func (schd *Scheduler) execTask(t *Task) {
 	var err error
-
-	if err = t.TaskFunc(); err != nil {
-		t.MaxRetry--
-	} else {
+	if err = t.TaskFunc(); err == nil {
 		t.AfterFunc()
 		// if success return
 		t.done <- struct{}{}
 		return
 	}
 
+	t.MaxRetry--
 	if t.MaxRetry == 0 {
 		t.timer.Stop()
-		if err != nil {
-			t.ErrFunc(err)
-		}
+		t.ErrFunc(err)
 		if t.GlobalAbnormalEnd {
 			schd.abnormalEnd <- struct{}{}
+		} else {
+			t.done <- struct{}{}
 		}
-		t.done <- struct{}{}
 		return
 	}
 
