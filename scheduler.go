@@ -21,29 +21,8 @@ func New() *Scheduler {
 
 func (schd *Scheduler) Add(steps ...*Step) error {
 	for _, s := range steps {
-		// Check if TaskFunc is nil before doing anything
-		if s.TaskFunc == nil {
-			return fmt.Errorf("task function cannot be nil")
-		}
-
-		// Ensure Interval is never 0, this would cause Timer to panic
-		if s.Interval <= time.Duration(0) {
-			return fmt.Errorf("task interval must be defined")
-		}
-
-		if s.AfterFunc == nil {
-			s.AfterFunc = func() {}
-		}
-
-		if s.ErrFunc == nil {
-			s.ErrFunc = func(error) {}
-		}
-
-		s.done = make(chan struct{})
-
-		// Ensure MaxRetry is less 1
-		if s.MaxRetry < 1 {
-			s.MaxRetry = 1
+		if err := s.check(); err != nil {
+			return err
 		}
 
 		// Add task to schedule
@@ -104,7 +83,7 @@ func (schd *Scheduler) StopReleaseManage() {
 	schd.abnormalEnd <- struct{}{}
 }
 
-// StartStep start tasks in queue order
+// ReleaseManage start tasks in queue order
 func (schd *Scheduler) ReleaseManage(start int) {
 	for i := start; i < len(schd.steps); i++ {
 		schd.scheduleTask(schd.steps[i])

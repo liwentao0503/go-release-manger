@@ -119,3 +119,32 @@ func (s *Step) stepFailed(err error) {
 	s.ErrFunc(err)
 	s.saveResult(err)
 }
+
+func (s *Step) check() error {
+	// Check if TaskFunc is nil before doing anything
+	if s.TaskFunc == nil {
+		return fmt.Errorf("task function cannot be nil")
+	}
+
+	// Ensure Interval is never 0, this would cause Timer to panic
+	if s.Interval <= time.Duration(0) {
+		return fmt.Errorf("task interval must be defined")
+	}
+
+	if s.AfterFunc == nil {
+		s.AfterFunc = func() {}
+	}
+
+	if s.ErrFunc == nil {
+		s.ErrFunc = func(error) {}
+	}
+
+	s.done = make(chan struct{})
+
+	// Ensure MaxRetry is less 1
+	if s.MaxRetry < 1 {
+		s.MaxRetry = 1
+	}
+
+	return nil
+}
