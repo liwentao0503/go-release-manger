@@ -23,6 +23,7 @@ type StepRetry struct {
 type StepExecutionStatus uint8
 
 const (
+	// defauit 0 is running
 	StepExecutionSuccess StepExecutionStatus = iota + 1
 	StepExecutionSingleFailed
 	StepExecutionGlobalFailed
@@ -83,4 +84,38 @@ type Step struct {
 
 	// done is the internal finish signal. Keep in queue order
 	done chan struct{}
+}
+
+func (s *Step) saveResult(err error) {
+	if err != nil {
+		if s.GlobalAbnormalEnd {
+			s.Status = StepExecutionGlobalFailed
+			s.Result = s.Status.GetResult(err)
+			return
+		}
+		s.Status = StepExecutionSingleFailed
+		s.Result = s.Status.GetResult(err)
+	} else {
+		s.Status = StepExecutionSuccess
+	}
+
+	s.done <- struct{}{}
+}
+
+func (s *Step) saveStepTime() {
+	s.EndTime = time.Now()
+	s.DurationTime = time.Since(s.StartTime)
+}
+
+func (s *Step) stepDone() {
+	s.saveStepTime()
+	s.AfterFunc()
+	s.saveResult(nil)
+}
+
+func (s *Step) stepFailed(err error) {
+	s.saveStepTime()
+	s.timer.Stop()
+	s.ErrFunc(err)
+	s.saveResult(err)
 }

@@ -83,29 +83,15 @@ func (schd *Scheduler) scheduleTask(s *Step) {
 func (schd *Scheduler) execTask(s *Step) {
 	var err error
 	if err = s.TaskFunc(); err == nil {
-		s.EndTime = time.Now()
-		s.DurationTime = time.Since(s.StartTime)
-		s.AfterFunc()
-		// if success return
-		s.done <- struct{}{}
-		s.Status = StepExecutionSuccess
+		s.stepDone()
 		return
 	}
 
 	s.MaxRetry--
 	if s.MaxRetry == 0 {
-		s.EndTime = time.Now()
-		s.DurationTime = time.Since(s.StartTime)
-		s.timer.Stop()
-		s.ErrFunc(err)
+		s.stepFailed(err)
 		if s.GlobalAbnormalEnd {
-			s.Status = StepExecutionGlobalFailed
-			s.Result = s.Status.GetResult(err)
-			schd.abnormalEnd <- struct{}{}
-		} else {
-			s.Status = StepExecutionSingleFailed
-			s.Result = s.Status.GetResult(err)
-			s.done <- struct{}{}
+			schd.StopReleaseManage()
 		}
 		return
 	}
@@ -113,8 +99,13 @@ func (schd *Scheduler) execTask(s *Step) {
 	s.timer.Reset(s.Interval)
 }
 
+// StopReleaseManage stop release manage by chan
+func (schd *Scheduler) StopReleaseManage() {
+	schd.abnormalEnd <- struct{}{}
+}
+
 // StartStep start tasks in queue order
-func (schd *Scheduler) StartStep(start int) {
+func (schd *Scheduler) ReleaseManage(start int) {
 	for i := start; i < len(schd.steps); i++ {
 		schd.scheduleTask(schd.steps[i])
 		select {

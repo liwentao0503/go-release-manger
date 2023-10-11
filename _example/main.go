@@ -74,7 +74,7 @@ func main() {
 
 	scheduler.Add(tasks, tasks2, tasks3, tasks4)
 
-	go scheduler.StartStep(0)
+	go scheduler.ReleaseManage(0)
 
 	quit := make(chan os.Signal, 1)
 
