@@ -109,14 +109,18 @@ func (s *Step) saveStepTime() {
 
 func (s *Step) stepDone() {
 	s.saveStepTime()
-	s.AfterFunc()
+	if s.AfterFunc != nil {
+		s.AfterFunc()
+	}
 	s.saveResult(nil)
 }
 
 func (s *Step) stepFailed(err error) {
 	s.saveStepTime()
 	s.timer.Stop()
-	s.ErrFunc(err)
+	if s.ErrFunc != nil {
+		s.ErrFunc(err)
+	}
 	s.saveResult(err)
 }
 
@@ -129,14 +133,6 @@ func (s *Step) check() error {
 	// Ensure Interval is never 0, this would cause Timer to panic
 	if s.Interval <= time.Duration(0) {
 		return fmt.Errorf("task interval must be defined")
-	}
-
-	if s.AfterFunc == nil {
-		s.AfterFunc = func() {}
-	}
-
-	if s.ErrFunc == nil {
-		s.ErrFunc = func(error) {}
 	}
 
 	s.done = make(chan struct{})
