@@ -8,11 +8,11 @@ import (
 // Scheduler stores the internal task list and provides an interface for task management.
 type Scheduler struct {
 	abnormalEnd chan struct{}
-	// tasks is the internal task list used to store tasks that are currently scheduled.
+	// steps is the internal task list used to store steps that are currently scheduled.
 	steps []*Step
 }
 
-// New will create a new scheduler instance that allows users to create and manage tasks.
+// New will create a new scheduler instance that allows users to create and manage steps.
 func New() *Scheduler {
 	s := &Scheduler{}
 	s.steps = make([]*Step, 0)
@@ -42,9 +42,9 @@ func (schd *Scheduler) GetStepsExecutionStatus() []StepStatus {
 	return stepStatus
 }
 
-// scheduleTask creates the underlying scheduled task. If StartAfter is set, this routine will wait until the
+// scheduleStep creates the underlying scheduled task. If StartAfter is set, this routine will wait until the
 // time specified.
-func (schd *Scheduler) scheduleTask(s *Step) {
+func (schd *Scheduler) scheduleStep(s *Step) {
 	time.Sleep(s.DelayTime)
 	s.StartTime = time.Now()
 	s.timer = time.AfterFunc(s.Interval, func() {
@@ -54,14 +54,14 @@ func (schd *Scheduler) scheduleTask(s *Step) {
 			return
 		default:
 		}
-		schd.execTask(s)
+		schd.execStep(s)
 	})
 }
 
-// execTask is the underlying scheduler, it is used to trigger and execute tasks.
-func (schd *Scheduler) execTask(s *Step) {
+// execStep is the underlying scheduler, it is used to trigger and execute steps.
+func (schd *Scheduler) execStep(s *Step) {
 	var err error
-	if err = s.TaskFunc(); err == nil {
+	if err = s.StepFunc(); err == nil {
 		s.stepDone()
 		return
 	}
@@ -83,10 +83,10 @@ func (schd *Scheduler) StopReleaseManage() {
 	schd.abnormalEnd <- struct{}{}
 }
 
-// ReleaseManage start tasks in queue order
+// ReleaseManage start steps in queue order
 func (schd *Scheduler) ReleaseManage(start int) {
 	for i := start; i < len(schd.steps); i++ {
-		schd.scheduleTask(schd.steps[i])
+		schd.scheduleStep(schd.steps[i])
 		select {
 		case <-schd.abnormalEnd:
 			return

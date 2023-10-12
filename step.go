@@ -63,9 +63,9 @@ type Step struct {
 
 	// stepFunc is the user defined function to execute as part of this step.
 	// Either stepFunc or FuncWithstepContext must be defined. If both are defined, FuncWithstepContext will be used.
-	TaskFunc func() error
+	StepFunc func() error
 
-	// AfterFunc is executed after TaskFunc is executed correctly. Execute only once
+	// AfterFunc is executed after StepFunc is executed correctly. Execute only once
 	AfterFunc func()
 
 	// ErrFunc allows users to define a function that is called when steps return an error. If ErrFunc is nil,
@@ -125,8 +125,8 @@ func (s *Step) stepFailed(err error) {
 }
 
 func (s *Step) check() error {
-	// Check if TaskFunc is nil before doing anything
-	if s.TaskFunc == nil {
+	// Check if StepFunc is nil before doing anything
+	if s.StepFunc == nil {
 		return fmt.Errorf("task function cannot be nil")
 	}
 

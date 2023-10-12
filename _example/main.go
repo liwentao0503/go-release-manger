@@ -20,10 +20,10 @@ func main() {
 		Interval: 1 * time.Second,
 		MaxRetry: 3,
 	}
-	tasks := &releaseManage.Step{
+	steps := &releaseManage.Step{
 		Ctx:       mainCtx,
 		StepRetry: retryStep,
-		TaskFunc: func() error {
+		StepFunc: func() error {
 			fmt.Println("task1")
 			return nil
 		},
@@ -35,12 +35,12 @@ func main() {
 		},
 	}
 
-	tasks2 := &releaseManage.Step{
+	steps2 := &releaseManage.Step{
 		Ctx:               mainCtx,
 		StepRetry:         retryStep,
 		DelayTime:         1 * time.Second,
 		GlobalAbnormalEnd: true,
-		TaskFunc: func() error {
+		StepFunc: func() error {
 			fmt.Println("task2")
 			return fmt.Errorf("task2 err")
 		},
@@ -52,27 +52,27 @@ func main() {
 		},
 	}
 
-	tasks3 := &releaseManage.Step{
+	steps3 := &releaseManage.Step{
 		Ctx:       mainCtx,
 		StepRetry: retryStep,
 		DelayTime: 1 * time.Second,
-		TaskFunc: func() error {
+		StepFunc: func() error {
 			fmt.Println("task3")
 			return nil
 		},
 	}
 
-	tasks4 := &releaseManage.Step{
+	steps4 := &releaseManage.Step{
 		Ctx:       mainCtx,
 		StepRetry: retryStep,
 		DelayTime: 1 * time.Second,
-		TaskFunc: func() error {
+		StepFunc: func() error {
 			fmt.Println("task4")
 			return nil
 		},
 	}
 
-	scheduler.Add(tasks, tasks2, tasks3, tasks4)
+	scheduler.Add(steps, steps2, steps3, steps4)
 
 	go scheduler.ReleaseManage(0)
 
