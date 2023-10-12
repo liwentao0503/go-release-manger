@@ -103,13 +103,13 @@ func (schd *Scheduler) ReleaseManage(ctx context.Context, reportBeat func(), sta
 	}
 }
 
-func (schd *Scheduler) reportBeat(ctx context.Context, doFunc func()) {
+func (schd *Scheduler) reportBeat(ctx context.Context, reportBeat func()) {
 	tick := time.NewTicker(1 * time.Second)
 	defer tick.Stop()
 	for {
 		select {
 		case <-tick.C:
-			doFunc()
+			reportBeat()
 		case <-ctx.Done():
 			fmt.Println("reportBeat main ctx has canceled")
 			return
