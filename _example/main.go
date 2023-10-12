@@ -24,11 +24,11 @@ func main() {
 		Ctx:       mainCtx,
 		StepRetry: retryStep,
 		StepFunc: func() error {
-			fmt.Println("task1")
+			fmt.Println("step1")
 			return nil
 		},
 		AfterFunc: func() {
-			fmt.Println("task1 has finished ")
+			fmt.Println("step1 has finished ")
 		},
 		ErrFunc: func(error) {
 			fmt.Println("wwsdasdas2")
@@ -41,14 +41,14 @@ func main() {
 		DelayTime:         1 * time.Second,
 		GlobalAbnormalEnd: true,
 		StepFunc: func() error {
-			fmt.Println("task2")
-			return fmt.Errorf("task2 err")
+			fmt.Println("step2")
+			return fmt.Errorf("step2 err")
 		},
 		ErrFunc: func(error) {
-			fmt.Println("task2 failed use ErrFunc")
+			fmt.Println("step2 failed use ErrFunc")
 		},
 		AfterFunc: func() {
-			fmt.Println("task2 has finish")
+			fmt.Println("step2 has finish")
 		},
 	}
 
@@ -57,7 +57,7 @@ func main() {
 		StepRetry: retryStep,
 		DelayTime: 1 * time.Second,
 		StepFunc: func() error {
-			fmt.Println("task3")
+			fmt.Println("step3")
 			return nil
 		},
 	}
@@ -67,14 +67,16 @@ func main() {
 		StepRetry: retryStep,
 		DelayTime: 1 * time.Second,
 		StepFunc: func() error {
-			fmt.Println("task4")
+			fmt.Println("step4")
 			return nil
 		},
 	}
 
 	scheduler.Add(steps, steps2, steps3, steps4)
 
-	go scheduler.ReleaseManage(0)
+	go scheduler.ReleaseManage(mainCtx, func() {
+		fmt.Printf("%s is doing\n", scheduler.Name)
+	}, 0)
 
 	quit := make(chan os.Signal, 1)
 

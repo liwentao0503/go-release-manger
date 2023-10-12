@@ -127,12 +127,12 @@ func (s *Step) stepFailed(err error) {
 func (s *Step) check() error {
 	// Check if StepFunc is nil before doing anything
 	if s.StepFunc == nil {
-		return fmt.Errorf("task function cannot be nil")
+		return fmt.Errorf("step function cannot be nil")
 	}
 
 	// Ensure Interval is never 0, this would cause Timer to panic
 	if s.Interval <= time.Duration(0) {
-		return fmt.Errorf("task interval must be defined")
+		return fmt.Errorf("step interval must be defined")
 	}
 
 	s.done = make(chan struct{})

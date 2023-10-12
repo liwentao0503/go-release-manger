@@ -1,14 +1,19 @@
 package releaseManage
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"time"
 )
 
-// Scheduler stores the internal task list and provides an interface for task management.
+// Scheduler stores the internal step list and provides an interface for step management.
 type Scheduler struct {
-	abnormalEnd chan struct{}
-	// steps is the internal task list used to store steps that are currently scheduled.
+	// HostName Scheduler's name
+	Name   string
+	ctx    context.Context
+	cancel context.CancelFunc
+	// steps is the internal step list used to store steps that are currently scheduled.
 	steps []*Step
 }
 
@@ -16,6 +21,8 @@ type Scheduler struct {
 func New() *Scheduler {
 	s := &Scheduler{}
 	s.steps = make([]*Step, 0)
+	s.Name, _ = os.Hostname()
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	return s
 }
 
@@ -25,14 +32,14 @@ func (schd *Scheduler) Add(steps ...*Step) error {
 			return err
 		}
 
-		// Add task to schedule
+		// Add step to schedule
 		schd.steps = append(schd.steps, s)
 	}
 
 	return nil
 }
 
-// The returned task should be treated as read-only, and not modified outside of this package. Doing so, may cause
+// The returned step should be treated as read-only, and not modified outside of this package. Doing so, may cause
 // panics.
 func (schd *Scheduler) GetStepsExecutionStatus() []StepStatus {
 	stepStatus := make([]StepStatus, 0, len(schd.steps))
@@ -42,7 +49,7 @@ func (schd *Scheduler) GetStepsExecutionStatus() []StepStatus {
 	return stepStatus
 }
 
-// scheduleStep creates the underlying scheduled task. If StartAfter is set, this routine will wait until the
+// scheduleStep creates the underlying scheduled step. If StartAfter is set, this routine will wait until the
 // time specified.
 func (schd *Scheduler) scheduleStep(s *Step) {
 	time.Sleep(s.DelayTime)
@@ -80,17 +87,34 @@ func (schd *Scheduler) execStep(s *Step) {
 
 // StopReleaseManage stop release manage by chan
 func (schd *Scheduler) StopReleaseManage() {
-	schd.abnormalEnd <- struct{}{}
+	schd.cancel()
 }
 
 // ReleaseManage start steps in queue order
-func (schd *Scheduler) ReleaseManage(start int) {
+func (schd *Scheduler) ReleaseManage(ctx context.Context, reportBeat func(), start int) {
+	go schd.reportBeat(ctx, reportBeat)
 	for i := start; i < len(schd.steps); i++ {
 		schd.scheduleStep(schd.steps[i])
 		select {
-		case <-schd.abnormalEnd:
+		case <-schd.ctx.Done():
 			return
 		case <-schd.steps[i].done:
+		}
+	}
+}
+
+func (schd *Scheduler) reportBeat(ctx context.Context, doFunc func()) {
+	tick := time.NewTicker(1 * time.Second)
+	defer tick.Stop()
+	for {
+		select {
+		case <-tick.C:
+			doFunc()
+		case <-ctx.Done():
+			fmt.Println("reportBeat main ctx has canceled")
+			return
+		case <-schd.ctx.Done():
+			return
 		}
 	}
 }
