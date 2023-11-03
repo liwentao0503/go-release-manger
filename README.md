@@ -1,7 +1,7 @@
 # go-release-manger
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/liwentao0503/go-release-manger)](https://goreportcard.com/report/github.com/liwentao0503/go-release-manger) 
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/liwentao0503/go-release-manger)](https://pkg.go.dev/github.com/liwentao0503/go-release-manger)
+[![Go Report Card](https://goreportcard.com/badge/github.com/wt1i/go-release-manger)](https://goreportcard.com/report/github.com/wt1i/go-release-manger) 
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/wt1i/go-release-manger)](https://pkg.go.dev/github.com/wt1i/go-release-manger)
 
 Package releaseManage is an easy to use in-process scheduler for recurring steps in Go. Similar to a publishing system that publishes in order, 
 it supports single-step retry, single-step delay, single-step completion hook, single-step error handling, and context graceful exit.
@@ -19,4 +19,4 @@ and flexible control over when steps are executed.
 - **Custom Error Handling**: Define a custom error handling function to handle errors returned by steps, enabling tailored error handling logic.
 
 ## Flow Chart
-![image](https://github.com/liwentao0503/go-release-manger/blob/main/img/flow_chart.png)
+![image](https://github.com/wt1i/go-release-manger/blob/main/img/flow_chart.png)

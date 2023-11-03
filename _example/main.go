@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	releaseManage "github.com/liwentao0503/go-release-manger"
+	releaseManage "release-manger"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/liwentao0503/go-release-manger
+module release-manger
 
 go 1.20
 
