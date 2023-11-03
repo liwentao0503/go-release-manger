@@ -1,4 +1,4 @@
-# go-release-manger
+# release-manger
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/wt1i/go-release-manger)](https://goreportcard.com/report/github.com/wt1i/go-release-manger) 
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/wt1i/go-release-manger)](https://pkg.go.dev/github.com/wt1i/go-release-manger)
